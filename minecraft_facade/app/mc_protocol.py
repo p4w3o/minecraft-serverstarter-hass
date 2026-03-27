@@ -1,6 +1,4 @@
-import socket
 import json
-import struct
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,6 +10,7 @@ def read_varint(sock):
 
     while True:
         b = sock.recv(1)
+
         if not b:
             return None
 
@@ -45,80 +44,89 @@ def write_varint(value):
 def send_packet(sock, packet_id, payload):
     data = write_varint(packet_id) + payload
     length = write_varint(len(data))
+
     sock.send(length + data)
 
 
-class MinecraftFacade:
+class MinecraftProtocol:
 
-    def __init__(self, config, ha_client):
+    def __init__(self, config, ha):
         self.config = config
-        self.ha_client = ha_client
+        self.ha = ha
 
-    def handle_client(self, conn, addr):
+    def handle(self, conn, addr):
+
         ip = addr[0]
-        logger.info(f"[Facade] Connection from {ip}")
 
         try:
-            read_varint(conn)  # packet length
+            read_varint(conn)
             packet_id = read_varint(conn)
 
             if packet_id != 0:
-                conn.close()
                 return
 
-            protocol = read_varint(conn)
+            read_varint(conn)
 
             addr_len = read_varint(conn)
             conn.recv(addr_len)
 
-            conn.recv(2)  # port
+            conn.recv(2)
+
             next_state = read_varint(conn)
 
             if next_state == 1:
-                self.handle_status(conn)
+                self.status(conn)
 
             elif next_state == 2:
-                self.handle_login(conn, ip)
+                self.login(conn, ip)
 
         except Exception as e:
-            logger.warning(f"[Facade] error: {e}")
+            logger.debug("Protocol error: %s", e)
 
         conn.close()
 
-    def handle_status(self, conn):
+    def status(self, conn):
+
         read_varint(conn)
         read_varint(conn)
 
-        favicon = self.ha_client.get_icon_b64(self.config.get("icon", ""))
+        favicon = self.ha.get_icon_b64(self.config.get("icon"))
 
-        status = {
+        response = {
             "version": {"name": "Facade", "protocol": 9999},
             "players": {"max": 0, "online": 0},
-            "description": {"text": self.config.get("motd", "Minecraft Facade")},
+            "description": {"text": self.config.get("motd")}
         }
 
         if favicon:
-            status["favicon"] = favicon
+            response["favicon"] = favicon
 
-        data = json.dumps(status).encode()
+        data = json.dumps(response).encode()
 
         payload = write_varint(len(data)) + data
+
         send_packet(conn, 0, payload)
 
-    def handle_login(self, conn, ip):
+    def login(self, conn, ip):
+
         read_varint(conn)
         read_varint(conn)
 
         name_len = read_varint(conn)
         username = conn.recv(name_len).decode()
 
-        logger.info(f"[Facade] Join attempt: {username} from {ip}")
+        logger.info("Join attempt %s (%s)", username, ip)
 
-        self.ha_client.fire_event(self.config["name"], username)
+        self.ha.fire_join_event(
+            self.config["name"],
+            username,
+            ip
+        )
 
         msg = json.dumps({
-            "text": self.config.get("kick_message", "Server starting")
+            "text": self.config.get("kick_message")
         }).encode()
 
         payload = write_varint(len(msg)) + msg
+
         send_packet(conn, 0, payload)
