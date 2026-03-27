@@ -3,9 +3,12 @@ description: Fake Minecraft Java server facade for Home Assistant
 version: 0.1.2
 slug: minecraft_facade
 init: false
+homeassistant_api: true
+
 arch:
   - aarch64
   - amd64
+
 map:
   - share:rw
 options:

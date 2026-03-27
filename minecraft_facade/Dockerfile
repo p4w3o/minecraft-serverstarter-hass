@@ -7,7 +7,7 @@ RUN apk add --no-cache python3 py3-pip
 
 COPY app /app
 
-RUN pip3 install --no-cache-dir \
+RUN pip3 install --no-cache-dir --break-system-packages \
     quarry \
     paho-mqtt \
     requests \
