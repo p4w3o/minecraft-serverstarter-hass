@@ -1,6 +1,6 @@
 name: Minecraft Facade
 description: Fake Minecraft Java server facade for Home Assistant
-version: 1.3.6
+version: 1.0.1
 slug: minecraft_facade
 init: false
 homeassistant_api: true
