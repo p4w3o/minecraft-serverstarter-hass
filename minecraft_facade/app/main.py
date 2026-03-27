@@ -13,19 +13,16 @@ def main():
     ha_client = HAClient(config)
 
     facades = {}
-    for facade_config in config.get("facades", []):
+    for idx, facade_config in enumerate(config.get("facades", [])):
         slug = facade_config["name"].lower().replace(" ", "_")
-
-        # Créer le switch dans HA via MQTT discovery
         ha_client.publish_discovery(facade_config["name"])
-        # État initial ON
         ha_client.set_switch_state(slug, True)
 
         server = FacadeServer(facade_config, ha_client)
         server.start()
         facades[slug] = server
+        logger.info(f"[Main] Facade '{facade_config['name']}' started with session {idx}")
 
-        logger.info(f"[Main] Facade '{facade_config['name']}' démarrée sur port {facade_config['port']}")
 
     # Écoute les toggles de switch via MQTT
     MQTTListener(ha_client, facades)
