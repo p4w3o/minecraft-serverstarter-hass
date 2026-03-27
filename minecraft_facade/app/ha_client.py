@@ -54,6 +54,7 @@ class HAClient:
         }
 
         self.client.publish(topic, json.dumps(payload))
+        logger.info(f"[MQTT] Published join event: {topic} {payload}")
 
     def get_icon_b64(self, path):
         if not path:
