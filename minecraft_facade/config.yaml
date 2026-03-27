@@ -1,0 +1,28 @@
+name: Minecraft Facade
+description: Fake Minecraft Java server facade for Home Assistant
+version: 0.1.0
+slug: minecraft_facade
+init: false
+arch:
+  - aarch64
+  - amd64
+map:
+  - share:rw
+options:
+  mqtt_user: "homeassistant"
+  mqtt_password: ""
+  facades:
+    - name: "default"
+      port: 25565
+      motd: "§6Server is starting, please wait..."
+      kick_message: "§cServer is starting! Try again in a moment."
+      icon: ""
+schema:
+  mqtt_user: str
+  mqtt_password: str
+  facades:
+    - name: str
+      port: int
+      motd: str
+      kick_message: str
+      icon: str?
