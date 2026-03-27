@@ -1,7 +1,5 @@
 #!/usr/bin/with-contenv bashio
-
-set -e
-
 echo "Starting Minecraft Facade..."
-
-python3 /app/main.py
+export PYTHONPATH=/app
+cd /app
+python3 main.py
