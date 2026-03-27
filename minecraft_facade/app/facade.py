@@ -5,8 +5,14 @@ from mc_protocol import MinecraftProtocol
 
 logger = logging.getLogger(__name__)
 
-
 class FacadeServer:
+
+    def __init__(self, config, ha_client):
+        self.config = config
+        self.ha = ha_client
+        self.sock = None
+        self.running = False
+        self.threads = []
 
     def start(self):
         port = self.config["port"]
@@ -19,7 +25,9 @@ class FacadeServer:
 
         self.running = True
 
-        threading.Thread(target=self.loop, daemon=True).start()
+        t = threading.Thread(target=self.loop, daemon=True)
+        t.start()
+        self.threads.append(t)
 
         logger.info(f"Facade '{self.config['name']}' listening on {port}")
 
@@ -34,15 +42,23 @@ class FacadeServer:
             except OSError:
                 break  # socket fermé
 
-            threading.Thread(
-                target=proto.handle,
-                args=(conn, addr),
-                daemon=True
-            ).start()
+            t = threading.Thread(target=proto.handle, args=(conn, addr), daemon=True)
+            t.start()
+            self.threads.append(t)
 
     def set_enabled(self, enabled):
         if enabled and not self.running:
             self.start()
         elif not enabled and self.running:
+            logger.info(f"Stopping Facade '{self.config['name']}'...")
             self.running = False
+
+            # shutdown pour libérer toutes les connexions actives
+            try:
+                self.sock.shutdown(socket.SHUT_RDWR)
+            except Exception:
+                pass
+
             self.sock.close()
+            self.sock = None
+            logger.info(f"Facade '{self.config['name']}' stopped and port released")
