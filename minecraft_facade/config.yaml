@@ -1,9 +1,10 @@
 name: Minecraft Facade
 description: Fake Minecraft Java server facade for Home Assistant
-version: 0.1.5
+version: 0.1.6
 slug: minecraft_facade
 init: false
 homeassistant_api: true
+host_network: true # <<< Add this
 
 arch:
   - aarch64
@@ -11,6 +12,7 @@ arch:
 
 map:
   - share:rw
+
 options:
   mqtt_user: "homeassistant"
   mqtt_password: ""
@@ -20,6 +22,7 @@ options:
       motd: "§6Server is starting, please wait..."
       kick_message: "§cServer is starting! Try again in a moment."
       icon: ""
+
 schema:
   mqtt_user: str
   mqtt_password: str
